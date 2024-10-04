@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS MCQ Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #232f3e;
+        }
+        #service-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #service-buttons button, #start-mcq, #submit-btn, #try-again-btn, #next-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #ff9900;
+            color: #232f3e;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        #service-buttons button:hover, #start-mcq:hover, #submit-btn:hover, #try-again-btn:hover, #next-btn:hover {
+            background-color: #ffad33;
+        }
+        #mcq-section {
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        .question {
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #232f3e;
+        }
+        .options label {
+            display: block;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        .options input[type="radio"] {
+            margin-right: 10px;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #232f3e;
+        }
+        #celebration {
+            display: none;
+            margin-top: 20px;
+        }
+        #celebration img {
+            width: 100px;
+            animation: bounce 0.5s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        #progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        #progress {
+            width: 0;
+            height: 100%;
+            background-color: #ff9900;
+            transition: width 0.5s ease-in-out;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .correct {
+            color: green;
+        }
+        .incorrect {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>AWS MCQ Quiz</h1>
+    <div id="service-buttons">
+        <button onclick="selectService('EC2')">EC2</button>
+        <button onclick="selectService('VPC')">VPC</button>
+        <button onclick="selectService('S3')">S3</button>
+        <button onclick="selectService('CloudTrail')">CloudTrail</button>
+        <button onclick="selectService('CloudWatch')">CloudWatch</button>
+        <button onclick="selectService('GuardDuty')">GuardDuty</button>
+    </div>
+    <button id="start-mcq" style="display: none;" onclick="startMCQ()">Start Quiz</button>
+    <div id="mcq-section">
+        <!-- MCQs will be loaded here -->
+    </div>
+    <div id="progress-bar">
+        <div id="progress"></div>
+    </div>
+    <div id="celebration">
+        <img src="/api/placeholder/100/100" alt="Celebration">
+    </div>
+
+    <script>
+        const mcqData = {
+            EC2: [
+                { question: "What is EC2?", options: ["Compute Service", "Storage Service", "Database", "Networking Service"], correct: 0 },
+                { question: "Which EC2 instance type is optimized for memory-intensive applications?", options: ["C5", "M5", "R5", "T3"], correct: 2 },
+                { question: "What is the purpose of an Elastic IP address?", options: ["To provide a static private IP", "To provide a static public IP", "To improve network performance", "To encrypt network traffic"], correct: 1 },
+                { question: "Which feature allows you to automatically scale EC2 instances based on demand?", options: ["Elastic Load Balancing", "Auto Scaling", "Reserved Instances", "Spot Instances"], correct: 1 },
+                { question: "What is the maximum size of an EC2 instance store volume?", options: ["1 TB", "4 TB", "10 TB", "16 TB"], correct: 2 }
+            ],
+            VPC: [
+                { question: "What does VPC stand for?", options: ["Virtual Private Cloud", "Virtual Public Cloud", "Virtual Private Cluster", "Virtual Public Cluster"], correct: 0 },
+                { question: "What is the primary purpose of a VPC?", options: ["To provide virtualized storage", "To isolate resources in a private network", "To manage DNS settings", "To optimize compute performance"], correct: 1 },
+                { question: "Which VPC component is used to connect a VPC to the internet?", options: ["NAT Gateway", "VPN Connection", "Direct Connect", "Internet Gateway"], correct: 3 },
+                { question: "What is the maximum number of VPCs you can create per region by default?", options: ["1", "3", "5", "10"], correct: 2 },
+                { question: "Which VPC feature allows you to extend your on-premises network to AWS?", options: ["VPN", "Peering", "Endpoints", "Flow Logs"], correct: 0 }
+            ],
+            S3: [
+                { question: "What does S3 stand for?", options: ["Simple Storage Service", "Scalable Storage Solution", "Secure Storage System", "Server-Side Storage"], correct: 0 },
+                { question: "What is the maximum size of an S3 object?", options: ["1 GB", "5 GB", "5 TB", "No limit"], correct: 2 },
+                { question: "Which S3 storage class is designed for long-term archival and has the lowest storage cost?", options: ["Standard", "Intelligent-Tiering", "Glacier", "One Zone-IA"], correct: 2 },
+                { question: "What is the purpose of S3 versioning?", options: ["To compress objects", "To encrypt objects", "To keep multiple variants of an object", "To replicate objects across regions"], correct: 2 },
+                { question: "Which S3 feature allows you to define rules to automatically transition objects between storage classes?", options: ["Lifecycle Management", "Cross-Region Replication", "Transfer Acceleration", "Event Notifications"], correct: 0 }
+            ],
+            CloudTrail: [
+                { question: "What is the primary purpose of AWS CloudTrail?", options: ["Log API activity", "Monitor performance", "Manage security groups", "Automate deployments"], correct: 0 },
+                { question: "How long does CloudTrail retain event logs by default?", options: ["7 days", "30 days", "90 days", "Indefinitely"], correct: 2 },
+                { question: "Which AWS service can be used to analyze CloudTrail logs?", options: ["CloudWatch", "Athena", "Redshift", "All of the above"], correct: 3 },
+                { question: "What is a CloudTrail trail?", options: ["A log file", "A configuration for logging", "A network path", "A security policy"], correct: 1 },
+                { question: "Can CloudTrail log events across multiple AWS accounts?", options: ["Yes", "No", "Only for EC2 events", "Only for S3 events"], correct: 0 }
+            ],
+            CloudWatch: [
+                { question: "What is the primary purpose of Amazon CloudWatch?", options: ["Monitor AWS resources", "Manage IAM users", "Deploy applications", "Store data"], correct: 0 },
+                { question: "What is the smallest granularity for CloudWatch metrics?", options: ["1 second", "1 minute", "5 minutes", "1 hour"], correct: 1 },
+                { question: "Which of the following is NOT a CloudWatch feature?", options: ["Alarms", "Logs", "Events", "Network Access Control"], correct: 3 },
+                { question: "What is a CloudWatch namespace?", options: ["A container for metrics", "A type of alarm", "A log group", "A dashboard widget"], correct: 0 },
+                { question: "Can CloudWatch collect custom metrics?", options: ["Yes", "No", "Only for EC2 instances", "Only for RDS instances"], correct: 0 }
+            ],
+            GuardDuty: [
+                { question: "What is Amazon GuardDuty?", options: ["A threat detection service", "A firewall service", "An encryption service", "A load balancing service"], correct: 0 },
+                { question: "Which data sources does GuardDuty analyze?", options: ["VPC Flow Logs", "DNS logs", "CloudTrail events", "All of the above"], correct: 3 },
+                { question: "How does GuardDuty detect threats?", options: ["Machine learning", "Rule-based detection", "Both A and B", "Manual analysis"], correct: 2 },
+                { question: "Can GuardDuty be used across multiple AWS accounts?", options: ["Yes", "No", "Only for EC2 instances", "Only for S3 buckets"], correct: 0 },
+                { question: "What is the pricing model for GuardDuty?", options: ["Pay-per-use", "Monthly subscription", "Annual contract", "Free service"], correct: 0 }
+            ]
+        };
+
+        let selectedService = null;
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+
+        function selectService(service) {
+            selectedService = service;
+            document.getElementById('start-mcq').style.display = 'inline-block';
+            document.getElementById('mcq-section').innerHTML = `<p>Selected service: ${service}. Click "Start Quiz" to begin.</p>`;
+        }
+
+        function startMCQ() {
+            if (!selectedService || !mcqData[selectedService]) {
+                alert("Please select a valid service first.");
+                return;
+            }
+
+            currentQuestions = shuffleArray([...mcqData[selectedService]]);
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            displayQuestion();
+            updateProgressBar();
+        }
+
+        function displayQuestion() {
+            const q = currentQuestions[currentQuestionIndex];
+            let mcqHtml = `
+                <div class="question">${currentQuestionIndex + 1}. ${q.question}</div>
+                <div class="options">
+                    ${q.options.map((opt, i) => `
+                        <label>
+                            <input type="radio" name="q${currentQuestionIndex}" value="${i}">
+                            ${opt}
+                        </label>
+                    `).join('')}
+                </div>
+            `;
+
+            mcqHtml += '<button id="next-btn" onclick="checkAnswer()">Next</button>';
+
+            document.getElementById('mcq-section').innerHTML = mcqHtml;
+        }
+
+        function checkAnswer() {
+            const selectedAnswer = document.querySelector(`input[name="q${currentQuestionIndex}"]:checked`);
+            if (!selectedAnswer) {
+                alert("Please select an answer before proceeding.");
+                return;
+            }
+
+            const userAnswer = parseInt(selectedAnswer.value);
+            const correctAnswer = currentQuestions[currentQuestionIndex].correct;
+            userAnswers.push(userAnswer);
+
+            let feedbackHtml = '';
+            if (userAnswer === correctAnswer) {
+                feedbackHtml = '<div class="feedback correct">Correct!</div>';
+            } else {
+                feedbackHtml = `
+                    <div class="feedback incorrect">
+                        Incorrect. The correct answer is: ${currentQuestions[currentQuestionIndex].options[correctAnswer]}
+                    </div>
+                `;
+            }
+
+            document.getElementById('mcq-section').innerHTML += feedbackHtml;
+
+            if (currentQuestionIndex === currentQuestions.length - 1) {
+                document.getElementById('next-btn').textContent = 'Show Results';
+                document.getElementById('next-btn').onclick = submitMCQ;
+            } else {
+                document.getElementById('next-btn').textContent = 'Next Question';
+                document.getElementById('next-btn').onclick = nextQuestion;
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            displayQuestion();
+            updateProgressBar();
+        }
+
+        function submitMCQ() {
+            let score = userAnswers.reduce((acc, answer, index) => {
+                return acc + (answer === currentQuestions[index].correct ? 1 : 0);
+            }, 0);
+
+            const resultHtml = `
+                <h2>Your Score: ${score} out of ${currentQuestions.length}</h2>
+                <button id="try-again-btn" onclick="startMCQ()">Try Again</button>
+            `;
+            document.getElementById('mcq-section').innerHTML = resultHtml;
+
+            if (score > currentQuestions.length * 0.8) {
+                document.getElementById('celebration').style.display = 'block';
+            } else {
+                document.getElementById('celebration').style.display = 'none';
+            }
+        }
+
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>

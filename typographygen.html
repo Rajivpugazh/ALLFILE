@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Typography Generator</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #f0f0f0;
+            --card-background: #ffffff;
+            --error-color: #e74c3c;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--secondary-color);
+        }
+        h1 {
+            color: var(--secondary-color);
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        textarea, input[type="text"], input[type="color"], input[type="number"], input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[type="color"] {
+            height: 40px;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            font-style: italic;
+        }
+        #error {
+            color: var(--error-color);
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 1000px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #outputCanvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+        }
+        #previewContainer {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        #previewImage {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Advanced Typography Generator</h1>
+    <div class="container">
+        <div class="input-group">
+            <label for="textInput">Enter your text:</label>
+            <textarea id="textInput" rows="4" placeholder="Type or paste your text here"></textarea>
+        </div>
+        <div class="input-group">
+            <label for="imageUpload">Upload an image:</label>
+            <input type="file" id="imageUpload" accept="image/*">
+        </div>
+        <div class="input-group">
+            <label for="imageUrl">Or enter image URL:</label>
+            <input type="text" id="imageUrl" placeholder="https://example.com/image.jpg">
+        </div>
+        <div id="previewContainer">
+            <img id="previewImage" alt="Preview" />
+        </div>
+        <div class="input-group">
+            <label for="textColor">Text Color:</label>
+            <input type="color" id="textColor" value="#000000">
+        </div>
+        <div class="input-group">
+            <label for="backgroundColor">Background Color:</label>
+            <input type="color" id="backgroundColor" value="#ffffff">
+        </div>
+        <div class="input-group">
+            <label for="fontSize">Font Size:</label>
+            <input type="range" id="fontSize" min="1" max="20" value="5">
+            <span id="fontSizeValue">5</span>
+        </div>
+        <div class="input-group">
+            <label for="contrast">Contrast:</label>
+            <input type="range" id="contrast" min="0" max="255" value="128">
+            <span id="contrastValue">128</span>
+        </div>
+        <div class="button-group">
+            <button id="generateButton" onclick="generateTypography()">Generate Typography</button>
+            <button id="downloadButton" onclick="downloadImage()" disabled>Download Image</button>
+        </div>
+        <div id="loading">Generating typography... Please wait.</div>
+        <div id="error"></div>
+    </div>
+
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <canvas id="outputCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let generatedImage = null;
+        const modal = document.getElementById('imageModal');
+        const closeBtn = document.getElementsByClassName('close')[0];
+        const generateButton = document.getElementById('generateButton');
+        const downloadButton = document.getElementById('downloadButton');
+        const fontSizeInput = document.getElementById('fontSize');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const contrastInput = document.getElementById('contrast');
+        const contrastValue = document.getElementById('contrastValue');
+        const previewImage = document.getElementById('previewImage');
+
+        function updateFontSizeValue() {
+            fontSizeValue.textContent = fontSizeInput.value;
+        }
+
+        function updateContrastValue() {
+            contrastValue.textContent = contrastInput.value;
+        }
+
+        fontSizeInput.addEventListener('input', updateFontSizeValue);
+        contrastInput.addEventListener('input', updateContrastValue);
+
+        function previewInputImage(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                previewInputImage(e.target.files[0]);
+            }
+        });
+
+        document.getElementById('imageUrl').addEventListener('input', function(e) {
+            if (e.target.value) {
+                previewImage.src = e.target.value;
+            }
+        });
+
+        async function generateTypography() {
+            const text = document.getElementById('textInput').value;
+            const imageUpload = document.getElementById('imageUpload');
+            const imageUrl = document.getElementById('imageUrl').value;
+            const textColor = document.getElementById('textColor').value;
+            const backgroundColor = document.getElementById('backgroundColor').value;
+            const fontSize = parseInt(fontSizeInput.value);
+            const contrast = parseInt(contrastInput.value);
+            const canvas = document.getElementById('outputCanvas');
+            const ctx = canvas.getContext('2d');
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+
+            if (!text) {
+                showError('Please enter some text.');
+                return;
+            }
+
+            if (!imageUpload.files[0] && !imageUrl) {
+                showError('Please upload an image or provide an image URL.');
+                return;
+            }
+
+            loadingElement.style.display = 'block';
+            errorElement.textContent = '';
+            generateButton.disabled = true;
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                ctx.drawImage(img, 0, 0);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const pixels = imageData.data;
+
+                ctx.fillStyle = backgroundColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = textColor;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                ctx.font = `${fontSize}px "Courier New", monospace`;
+
+                let textIndex = 0;
+                for (let y = 0; y < canvas.height; y += fontSize) {
+                    for (let x = 0; x < canvas.width; x += fontSize) {
+                        const i = (y * canvas.width + x) * 4;
+                        const brightness = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+
+                        if (brightness < contrast) {
+                            const char = text[textIndex % text.length];
+                            ctx.fillText(char, x, y);
+                            textIndex++;
+                        }
+                    }
+                }
+
+                loadingElement.style.display = 'none';
+                generatedImage = canvas.toDataURL('image/png');
+                modal.style.display = "block";
+                generateButton.disabled = false;
+                downloadButton.disabled = false;
+            };
+
+            img.onerror = function() {
+                showError('Error loading image. Please check the file or URL and try again.');
+                loadingElement.style.display = 'none';
+                generateButton.disabled = false;
+            };
+
+            try {
+                if (imageUpload.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(imageUpload.files[0]);
+                } else {
+                    const response = await fetch(imageUrl);
+                    const blob = await response.blob();
+                    img.src = URL.createObjectURL(blob);
+                }
+            } catch (error) {
+                showError('Error loading image. Please check your internet connection and try again.');
+                loadingElement.style.display = 'none';
+                generateButton.disabled = false;
+            }
+        }
+
+        function downloadImage() {
+            if (!generatedImage) {
+                showError('Please generate an image first.');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.href = generatedImage;
+            link.download = 'typography_art.png';
+            link.click();
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('error');
+            errorElement.textContent = message;
+        }
+
+        // Add event listeners for real-time updates
+        ['textInput', 'imageUpload', 'imageUrl', 'textColor', 'backgroundColor', 'fontSize', 'contrast'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                if (generatedImage) {
+                    generateTypography();
+                }
+            });
+        });
+
+        // Close modal when clicking on close button or outside the modal
+        closeBtn.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Initialize font size and contrast values
+        updateFontSizeValue();
+        updateContrastValue();
+    </script>
+</body>
+</html>
