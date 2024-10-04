@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Library Catalog</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                            url('/api/placeholder/1920/1080');
+            background-size: cover;
+            background-attachment: fixed;
+            margin: 0;
+            padding: 20px;
+            color: #d4c7b0;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(20, 16, 12, 0.95);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 30px;
+            border: 1px solid #594e42;
+        }
+        h1 {
+            text-align: center;
+            color: #d4c7b0;
+            font-size: 2.8em;
+            margin-bottom: 30px;
+            font-weight: normal;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        #search-input {
+            padding: 12px 20px;
+            border: 1px solid #594e42;
+            background-color: rgba(20, 16, 12, 0.7);
+            color: #d4c7b0;
+            border-radius: 4px;
+            width: 60%;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        #search-input:focus {
+            outline: none;
+            border-color: #8b7355;
+            background-color: rgba(20, 16, 12, 0.9);
+        }
+        #search-button {
+            background-color: #594e42;
+            color: #d4c7b0;
+            padding: 12px 25px;
+            border: 1px solid #8b7355;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+            transition: all 0.3s;
+        }
+        #search-button:hover {
+            background-color: #6d5d4e;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background-color: #2c241d;
+            color: #d4c7b0;
+            padding: 15px;
+            text-align: left;
+            border-bottom: 2px solid #594e42;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #594e42;
+        }
+        tr:hover {
+            background-color: rgba(89, 78, 66, 0.3);
+            cursor: pointer;
+        }
+        .book-image {
+            width: 80px;
+            height: 120px;
+            object-fit: cover;
+            border: 1px solid #594e42;
+        }
+        .book-title {
+            font-size: 1.2em;
+            color: #e6d5bc;
+            margin-bottom: 5px;
+        }
+        .book-author {
+            font-style: italic;
+            color: #a08563;
+        }
+        #no-results {
+            text-align: center;
+            color: #a08563;
+            font-style: italic;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            background-color: #2c241d;
+            margin: 10% auto;
+            padding: 30px;
+            border: 1px solid #594e42;
+            width: 70%;
+            max-width: 700px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .close {
+            color: #a08563;
+            position: absolute;
+            right: 20px;
+            top: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #d4c7b0;
+        }
+        .modal-image {
+            width: 200px;
+            height: 300px;
+            object-fit: cover;
+            border: 1px solid #594e42;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 2em;
+            color: #e6d5bc;
+            margin-bottom: 10px;
+        }
+        .modal-author {
+            font-size: 1.2em;
+            color: #a08563;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+        .modal-description {
+            color: #d4c7b0;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vintage Library Catalog</h1>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search our collection...">
+            <button id="search-button">Search</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Cover</th>
+                    <th>Title & Author</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody id="book-list">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal -->
+    <div id="bookModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <img id="modal-image" class="modal-image" src="" alt="Book cover">
+            <h2 id="modal-title" class="modal-title"></h2>
+            <p id="modal-author" class="modal-author"></p>
+            <p id="modal-description" class="modal-description"></p>
+        </div>
+    </div>
+
+    <script>
+        const books = [
+            {
+                title: "Hooked: How to Build Habit-Forming Products",
+                author: "Nir Eyal",
+                description: "In this compelling book, Eyal introduces the Hook Model, a framework that explains how successful products create habits among users. He outlines a four-phase process—Trigger, Action, Variable Reward, and Investment—that companies use to engage customers and build loyalty.",
+                image: "https://th.bing.com/th/id/R.fdc90992d6b17772340e4ce680896a00?rik=i%2f6%2bHPdGLC2Ukw&riu=http%3a%2f%2fecx.images-amazon.com%2fimages%2fI%2f71LAEf3UYeL.jpg&ehk=s8zEC5eZn6GTDaMENWDUAYltkLRQDC7cQekzSg0EBJQ%3d&risl=&pid=ImgRaw&r=0"
+            },
+            {
+                title: "The Soul of a New Machine",
+                author: "Tracy Kidder",
+                description: "This Pulitzer Prize-winning narrative offers an inside look at the technological revolution, chronicling the challenges faced by engineers at Data General as they design a new computer. Kidder captures the intense work environment and the collaborative spirit of innovation.",
+                image: "https://th.bing.com/th/id/R.13ff7e03820c9e227e160b31a6675337?rik=FuolGvNp8TCfkA&riu=http%3a%2f%2fecx.images-amazon.com%2fimages%2fI%2f41QJVJmNeJL._SY291_BO1%2c204%2c203%2c200_QL40_.jpg&ehk=RTvYVz3ZHhg%2fLersi%2bNLtJ2AHrm6HKjkibL7lOVOZGM%3d&risl=&pid=ImgRaw&r=0"
+            },
+            {
+                title: "AI Superpowers",
+                author: "Kai-Fu Lee",
+                description: "This enlightening book compares the artificial intelligence advancements in China and Silicon Valley, exploring the implications for global economics and employment. Lee draws on his experiences in both regions to discuss how different approaches to AI development could reshape industries and society.",
+                image: "https://th.bing.com/th/id/OIP.VlZOyze6u7p0FjtFY-vS4wHaKf?rs=1&pid=ImgDetMain"
+            },
+            {
+                title: "The Singularity Is Nearer",
+                author: "Ray Kurzweil",
+                description: "In this provocative follow-up, Kurzweil discusses the exponential growth of technology and its future trajectory, particularly focusing on artificial intelligence. He explores the idea of the \"singularity,\" a point where machines surpass human intelligence.",
+                image: "https://th.bing.com/th/id/R.4a5b77533b5b25e27ac8c4c3ae7f3f48?rik=c9BeGXTTzFPigQ&riu=http%3a%2f%2fwww.kurzweilai.net%2fimages%2fRay-Kurzweil-The-Singularity-Is-Near-book-cover.jpg&ehk=0RoJe8%2fmuADI81cYIIM4Qpn0RhV2gtcGNb0I95O3ksA%3d&risl=&pid=ImgRaw&r=0"
+            },
+            {
+                title: "Make: Electronics",
+                author: "Charles Platt",
+                description: "A practical and hands-on guide for beginners, this book teaches electronics through engaging projects. Platt encourages readers to experiment and learn by doing, covering essential concepts in a straightforward manner.",
+                image: "https://rukminim1.flixcart.com/image/832/832/book/3/0/0/make-electronics-2nd-edition-original-imaebzuzhzvhpxzm.jpeg?q=70"
+            },
+            {
+                title: "The Code: Silicon Valley and the Remaking of America",
+                author: "Margaret O'Mara",
+                description: "This comprehensive history of Silicon Valley delves into how the region transformed into a global tech hub. O'Mara examines the interplay between technology, politics, and culture, revealing the influential figures and pivotal moments that shaped the modern digital landscape.",
+                image: "https://prodimage.images-bn.com/pimages/9780399562204_p0_v1_s550x406.jpg"
+            },
+            {
+                title: "The Perfectionists",
+                author: "Simon Winchester",
+                description: "Winchester explores the concept of precision in engineering and its significance in shaping the modern world. Through fascinating anecdotes, he illustrates how precision has influenced various industries, from manufacturing to medicine.",
+                image: "https://th.bing.com/th/id/R.8a7a625188d37bd105c20d00222b20bb?rik=NopzMt0CmBUnMw&riu=http%3a%2f%2fprodimage.images-bn.com%2fpimages%2f9780062652560_p0_v3_s1200x630.jpg&ehk=VIQxcYBoldeee8Vr6c0gZa2Gh5lXk%2fN3VU0Nrr4edIg%3d&risl=&pid=ImgRaw&r=0"
+            },
+            {
+                title: "The Age of Surveillance Capitalism",
+                author: "Shoshana Zuboff",
+                description: "Zuboff's groundbreaking work analyzes how major tech companies exploit personal data for profit, framing it as a new form of capitalism. She discusses the implications of surveillance on privacy, democracy, and individual autonomy.",
+                image: "https://th.bing.com/th/id/R.8f0602428cb8b47a6a1ea40a9c53eb81?rik=C5bciUKjl%2f1ADw&riu=http%3a%2f%2fassets.allenandunwin.com.s3.amazonaws.com%2fimages%2foriginal%2f9781781256855.jpg&ehk=hAIRsQV%2bsx796kUqfSmFpRI47zpGPbr%2bwUKcMwpwWcc%3d&risl=&pid=ImgRaw&r=0"
+            },
+            {
+                title: "Blockchain Revolution",
+                author: "Don Tapscott and Alex Tapscott",
+                description: "This book explores the transformative potential of blockchain technology beyond cryptocurrencies. The authors examine how blockchain can revolutionize various sectors, including finance, supply chains, and governance.",
+                image:"https://th.bing.com/th/id/OIP.-wc7aL9AhcCrwjitO83nFgHaLV?rs=1&pid=ImgDetMain"
+            },
+            {
+                title: "Dawn of the New Everything",
+                author: "Jaron Lanier",
+                description: "Lanier's thought-provoking exploration of virtual reality delves into its potential to redefine human interaction and creativity. He reflects on the ethical implications of technology, advocating for a more human-centered approach to digital experiences.",
+                image: "https://www.zdnet.com/a/img/2018/03/23/aac8affe-fcff-42a2-9060-573449e98233/dawn-new-everything-book-main.png"
+            },
+            {
+                title: "Modern Software Engineering",
+                author: "David Farley",
+                description: "Hunt presents a collection of principles and practices aimed at improving software development processes. The book emphasizes the importance of flexibility, collaboration, and continuous learning in building high-quality software.",
+                image: "https://www.informit.com/ShowCover.aspx?isbn=0137314914"
+            },
+            {
+                title: "The Courage to Be Disliked",
+                author: "Ichiro Kishimi and Fumitake Koga",
+                description: "This philosophical dialogue based on Adlerian psychology explores the nature of happiness and self-acceptance. It challenges conventional beliefs about the influence of past experiences on present behavior.",
+                image: "https://imgv2-1-f.scribdassets.com/img/word_document/383148861/original/b1c06b4109/1582662841?v=1"
+            },
+            {
+                title: "Man's Search for Meaning",
+                author: "Viktor E. Frankl",
+                description: "A memoir that reflects on the author's experiences in Nazi concentration camps and his psychotherapeutic method of finding meaning in life.",
+                image: "https://images.thenile.io/r1000/9781844132393.jpg"
+            },
+            {
+                title: "12 Rules for Life",
+                author: "Jordan B. Peterson",
+                description: "This self-help book presents twelve practical principles for leading a meaningful life, drawing from psychology, philosophy, and ethics. Peterson discusses the importance of personal responsibility, discipline, and the search for purpose amidst chaos.",
+                image: "https://th.bing.com/th/id/OIP.ybYaaT3ebWRZtAp__fgqOwAAAA?rs=1&pid=ImgDetMain0"
+            },
+            {
+                title: "The 48 Laws of Power",
+                author: "Robert Greene",
+                description: "A guide to understanding power dynamics and strategies for success, drawing lessons from history and powerful figures.",
+                image: "https://th.bing.com/th/id/OIP.fpBiW2S5uK3Qeg9N7-eHHgHaKj?rs=1&pid=ImgDetMain"
+            }
+        ];
+
+        const modal = document.getElementById("bookModal");
+        const closeBtn = document.getElementsByClassName("close")[0];
+
+        function showBookDetails(book) {
+            document.getElementById("modal-image").src = book.image;
+            document.getElementById("modal-title").textContent = book.title;
+            document.getElementById("modal-author").textContent = `By ${book.author}`;
+            document.getElementById("modal-description").textContent = book.description;
+            modal.style.display = "block";
+        }
+
+        closeBtn.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        function renderBookList(booksToRender) {
+            const bookList = document.getElementById("book-list");
+            bookList.innerHTML = "";
+
+            if (booksToRender.length === 0) {
+                const noResults = document.createElement("tr");
+                noResults.innerHTML = `<td colspan="3"><p id="no-results">No books found matching your search.</p></td>`;
+                bookList.appendChild(noResults);
+                return;
+            }
+
+            booksToRender.forEach(book => {
+                const row = document.createElement("tr");
+                row.onclick = () => showBookDetails(book);
+                
+                row.innerHTML = `
+                    <td><img src="${book.image}" alt="${book.title}" class="book-image"></td>
+                    <td>
+                        <div class="book-title">${book.title}</div>
+                        <div class="book-author">By ${book.author}</div>
+                    </td>
+                    <td>${book.description}</td>
+                `;
+
+                bookList.appendChild(row);
+            });
+        }
+
+        function searchBooks() {
+            const searchInput = document.getElementById("search-input").value.toLowerCase().trim();
+            
+            if (searchInput === "") {
+                renderBookList(books);
+                return;
+            }
+
+            const exactMatch = books.find(book => 
+                book.title.toLowerCase() === searchInput.toLowerCase()
+            );
+
+            if (exactMatch) {
+                showBookDetails(exactMatch);
+                return;
+            }
+
+            const filteredBooks = books.filter(book =>
+                book.title.toLowerCase().includes(searchInput) ||
+                book.author.toLowerCase().includes(searchInput) ||
+                book.description.toLowerCase().includes(searchInput)
+            );
+
+            renderBookList(filteredBooks);
+        }
+
+        // Event listeners
+        document.getElementById("search-button").addEventListener("click", searchBooks);
+        document.getElementById("search-input").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                searchBooks();
+            }
+        });
+
+        // Initial render
+        renderBookList(books);
+    </script>
+</body>
+</html>
